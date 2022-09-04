@@ -18,6 +18,7 @@ pub struct TrayItemMacOS {
     _pool: *mut objc::runtime::Object,
     icon: Option<*mut objc::runtime::Object>,
     main_thread: Option<JoinHandle<()>>,
+    menu_item: *mut objc::runtime::Object,
 }
 
 impl TrayItemMacOS {
@@ -36,6 +37,7 @@ impl TrayItemMacOS {
                 _pool: pool,
                 icon,
                 menu: NSMenu::new(nil).autorelease(),
+                menu_item: NSMenu::new(nil).autorelease(),
                 main_thread: None,
             };
 
@@ -68,11 +70,23 @@ impl TrayItemMacOS {
             let no_key = NSString::alloc(nil).init_str(""); // TODO want this eventually
             let itemtitle = NSString::alloc(nil).init_str(label);
             let action = sel!(call);
-            let item = NSMenuItem::alloc(nil)
+            self.menu_item = NSMenuItem::alloc(nil)
                 .initWithTitle_action_keyEquivalent_(itemtitle, action, no_key);
-            let _: () = msg_send![item, setTitle: itemtitle];
+            let _: () = msg_send![self.menu_item, setTitle: itemtitle];
+            NSMenu::addItem_(self.menu, self.menu_item);
+        }
 
-            NSMenu::addItem_(self.menu, item);
+        Ok(())
+    }
+
+    pub fn set_label(&mut self, label: &str) -> Result<(), TIError> {
+        unsafe {
+            let itemtitle = NSString::alloc(nil).init_str(label);
+            self.menu_item.setTitle_(itemtitle);
+            let _: () = msg_send![self.menu_item, setTitle: itemtitle];
+            self.menu.setTitle_(itemtitle);
+            let _: () = msg_send![self.menu, setTitle: itemtitle];
+            let _: () = msg_send![self.menu, itemChanged: self.menu_item];
         }
 
         Ok(())
