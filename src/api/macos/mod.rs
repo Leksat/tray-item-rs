@@ -19,6 +19,7 @@ pub struct TrayItemMacOS {
     icon: Option<*mut objc::runtime::Object>,
     main_thread: Option<JoinHandle<()>>,
     menu_item: *mut objc::runtime::Object,
+    status_bar: Option<*mut objc::runtime::Object>,
 }
 
 impl TrayItemMacOS {
@@ -39,6 +40,7 @@ impl TrayItemMacOS {
                 menu: NSMenu::new(nil).autorelease(),
                 menu_item: NSMenu::new(nil).autorelease(),
                 main_thread: None,
+                status_bar: None,
             };
 
             // t.display();
@@ -82,11 +84,7 @@ impl TrayItemMacOS {
     pub fn set_label(&mut self, label: &str) -> Result<(), TIError> {
         unsafe {
             let itemtitle = NSString::alloc(nil).init_str(label);
-            self.menu_item.setTitle_(itemtitle);
-            let _: () = msg_send![self.menu_item, setTitle: itemtitle];
-            self.menu.setTitle_(itemtitle);
-            let _: () = msg_send![self.menu, setTitle: itemtitle];
-            let _: () = msg_send![self.menu, itemChanged: self.menu_item];
+            self.status_bar.unwrap().setTitle_(itemtitle);
         }
 
         Ok(())
@@ -131,14 +129,14 @@ impl TrayItemMacOS {
 
     pub fn display(&mut self) {
         unsafe {
-            let item = NSStatusBar::systemStatusBar(nil).statusItemWithLength_(-1.0);
+            self.status_bar = Some(NSStatusBar::systemStatusBar(nil).statusItemWithLength_(-1.0));
             let title = NSString::alloc(nil).init_str(&self.name);
             if let Some(icon) = self.icon {
-                let _: () = msg_send![item, setImage: icon];
+                let _: () = msg_send![self.status_bar.unwrap(), setImage: icon];
             } else {
-                item.setTitle_(title);
+                self.status_bar.unwrap().setTitle_(title);
             }
-            item.setMenu_(self.menu);
+            self.status_bar.unwrap().setMenu_(self.menu);
         }
     }
 }
