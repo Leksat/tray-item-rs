@@ -2,10 +2,7 @@ use {
     crate::TIError,
     callback::*,
     cocoa::{
-        appkit::{
-            NSApp, NSApplication, NSApplicationActivateIgnoringOtherApps, NSImage, NSMenu,
-            NSMenuItem, NSRunningApplication, NSStatusBar, NSStatusItem, NSWindow,
-        },
+        appkit::{NSImage, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem, NSWindow},
         base::{nil, YES},
         foundation::{NSAutoreleasePool, NSString},
     },
@@ -120,9 +117,6 @@ impl TrayItemMacOS {
 
     pub fn display(&mut self) {
         unsafe {
-            let app = NSApp();
-            app.activateIgnoringOtherApps_(YES);
-
             let item = NSStatusBar::systemStatusBar(nil).statusItemWithLength_(-1.0);
             let title = NSString::alloc(nil).init_str(&self.name);
             if let Some(icon) = self.icon {
@@ -131,11 +125,6 @@ impl TrayItemMacOS {
                 item.setTitle_(title);
             }
             item.setMenu_(self.menu);
-
-            let current_app = NSRunningApplication::currentApplication(nil);
-            current_app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps);
-
-            app.run();
         }
     }
 }
