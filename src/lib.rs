@@ -32,3 +32,5 @@ impl TrayItem {
         &mut self.0
     }
 }
+
+unsafe impl Send for TrayItem {}
